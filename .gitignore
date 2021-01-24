@@ -1,0 +1,13 @@
+#ignore the Setting Folder and Files
+/.settings/
+.classpath
+.project
+
+#ignore the build output folder
+/bin/
+
+#ignore the JavaDoc output folder
+/doc/
+
+#ignore the log file
+/*.log
