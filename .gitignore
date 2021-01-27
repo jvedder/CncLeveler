@@ -11,3 +11,6 @@
 
 #ignore the log file
 /*.log
+
+#ignore the python plot script
+plot.py

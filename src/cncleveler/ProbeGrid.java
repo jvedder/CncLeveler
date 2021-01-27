@@ -15,20 +15,16 @@ public class ProbeGrid
     protected double x0 = 0.0;
     protected double y0 = 0.0;
 
-    protected int xsize = 0;
-    protected int ysize = 0;
+    public int xsize = 0;
+    public int ysize = 0;
 
-    protected double[] xgrid;
-    protected double[] ygrid;
-    protected double[][] zprobe;
+    public double[] xgrid;
+    public double[] ygrid;
+    public double[][] zprobe;
 
-    protected Point3 extents_min;
-    protected Point3 extents_max;
+    public Point3 extents_min;
+    public Point3 extents_max;
 
-    protected Point3 left_bottom;
-    protected Point3 left_top;
-    protected Point3 right_bottom;
-    protected Point3 right_top;
 
     /**
      * Constructor that requires a list of (x,y,z) probe values. Processes the
@@ -68,7 +64,7 @@ public class ProbeGrid
      *            The y coordinate to use in interpolation
      * @return the interpolated z value
      */
-    public double getProbeHight(double x, double y)
+    public double getProbeHeight(double x, double y)
     {
         double z1, z2;
 
@@ -76,7 +72,7 @@ public class ProbeGrid
         int j = findAxisIndex(ygrid, y);
 
         double x_ratio = (x - xgrid[i]) / (xgrid[i + 1] - xgrid[i]);
-        double y_ratio = (y - ygrid[i]) / (ygrid[i + 1] - ygrid[i]);
+        double y_ratio = (y - ygrid[j]) / (ygrid[j + 1] - ygrid[j]);
 
         // linear interpolate in y on left side;
         z1 = zprobe[i][j];
@@ -94,6 +90,7 @@ public class ProbeGrid
         return z;
     }
 
+    
     /**
      * Given an array of n grid values and a value v, returns i such that
      * grid[i] <= v < grid[i+1]. For out-of-bounds values, returns 0 if v <=
