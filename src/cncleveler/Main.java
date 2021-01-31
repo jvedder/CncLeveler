@@ -25,10 +25,13 @@ public class Main
         //List<Point3> probes = ProbeLogReader.read("probe-test-data.txt");
         //ProbeGrid grid = new ProbeGrid(probes);
         
-        ProbeGrid grid = new ProbeGrid(testProbes());
+        //ProbeGrid grid = new ProbeGrid(testProbes());
         
-        PyPlotGrid plot = new PyPlotGrid();
-        plot.plot(grid);
+        //PyPlotGrid plot = new PyPlotGrid();
+        //plot.plot(grid);
+        
+        GCodeParser parser = new GCodeParser();
+        parser.read("gcode.nc");
         
         logger.info("Done.");
      }

@@ -12,5 +12,8 @@
 #ignore the log file
 /*.log
 
-#ignore the python plot script
+#ignore output files
 plot.py
+CncLeveler.*.log
+CncLeveler.*.log.lck
+
