@@ -17,10 +17,53 @@ public class GCodeParser
 
     protected static final boolean DEBUG = true;
 
+    private static final Set<Character> NUMBER_CHARS = Set.of('+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8',
+            '9', '.');
+
+    /**
+     * List of valid G code letters 
+     * 
+     * <pre>
+     * G = General Command 
+     * L = Loop Count or G10 register number 
+     * M = Miscellaneous function 
+     * N = Line Number or G10 parameter number 
+     * P = Parameter address 
+     * T = Tool Selection
+     * X,Y,Z = Axis Position 
+     * I,J,K = Arc Center 
+     * F = Feed Rate 
+     * R = Radius 
+     * S = (Spindle) Speed
+     * </pre>
+     */
+    public static final Set<Character> COMMANDS = Set.of('G', 'L', 'M', 'N', 'P', 'T', 'X', 'Y', 'Z', 'I', 'J', 'K',
+            'F', 'R', 'S');
+
+    
+    /**
+     * Character buffer to hold the current line being parsed.
+     */
     protected char[] buffer;
+
+    
+    /**
+     * Index into the character buffer.
+     */
     protected int index;
+    
+    
+    /**
+     * Current line number in the file. Printed on parse exceptions.
+     */
     protected int lineNum;
 
+    
+    /**
+     * Reads and parses a G code file. 
+     * @param filename The filename (and path) to the G code file
+     * @throws IOException on an I/O error
+     */
     public void read(String filename) throws IOException
     {
         // Show progress
@@ -30,7 +73,7 @@ public class GCodeParser
         Path inFile = Paths.get(filename);
 
         List<CodeWord> block = new ArrayList<>();
-        
+
         // BufferedReader supports readLine()
         BufferedReader in = Files.newBufferedReader(inFile, StandardCharsets.UTF_8);
         lineNum = 0;
@@ -41,21 +84,17 @@ public class GCodeParser
             buffer = line.trim().toUpperCase().toCharArray();
             index = 0;
             block.clear();
-            
+
             while (index < buffer.length)
             {
-                if (buffer[index] == '(')
+                if (COMMANDS.contains(buffer[index]))
+                {
+                    block.add(parseWord());
+                }
+                else if (buffer[index] == '(')
                 {
                     // skip over (COMMENTS)
-                    skipComment();
-                }
-                else if (CodeWord.COMMANDS.contains(buffer[index]))
-                {
-                    block.add(parseWord());
-                }
-                else if (CodeWord.VALUES.contains(buffer[index]))
-                {
-                    block.add(parseWord());
+                    block.add(parseComment());
                 }
                 else if (buffer[index] <= ' ')
                 {
@@ -65,15 +104,14 @@ public class GCodeParser
                 else if ((buffer[index] == '%'))
                 {
                     // skip over %
-                    index++;                    
+                    index++;
                 }
-                    
                 else
                 {
-                    throw new RuntimeException(position() + "Unrecognized code letter: " +buffer[index]);
+                    throw new RuntimeException(position() + "Unrecognized code letter: " + buffer[index]);
                 }
             }
-            
+
             for (CodeWord word : block)
             {
                 System.out.print(word.toString());
@@ -83,6 +121,13 @@ public class GCodeParser
 
     }
 
+    
+    /**
+     * Parses a standard G code word: a letter followed by a number and returns
+     * a CodeWord.
+     * 
+     * @return a CodeWord with the parsed G Code word
+     */
     protected CodeWord parseWord()
     {
         if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected letter");
@@ -94,163 +139,84 @@ public class GCodeParser
         skipWhitespace();
         if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected number");
 
-        // Allow '+', '-' or nothing for sign
-        boolean negative = false;
-        if (buffer[index] == '-')
+        // Put all number characters into a string
+        StringBuilder number = new StringBuilder();
+        while (!endOfLine() && NUMBER_CHARS.contains(buffer[index]))
         {
-            negative = true;
+            number.append(buffer[index]);
             index++;
         }
-        else if (buffer[index] == '+')
-        {
-            negative = false;
-            index++;
-        }
-
-        // check for gross formating errors
-        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected number");
-
-        if (!Character.isDigit(buffer[index]))
-        {
-            throw new RuntimeException(position() + "Expected digit; found " + buffer[index]);
-        }
-
-        // Read integer portion
-        int number = 0;
-        while (!endOfLine() && Character.isDigit(buffer[index]))
-        {
-            number = (number * 10) + (buffer[index] - '0');
-            index++;
-        }
-        if (negative) number = -number;
-        word.setValue(number);
-
-        if (!endOfLine() && buffer[index] == '.')
-        {
-            index++;
-            // Read fractional portion up to 3 digits
-            number = 0;
-            int digits = 3;
-            while (!endOfLine() && Character.isDigit(buffer[index]) && digits > 0)
-            {
-                number = (number * 10) + (buffer[index] - '0');
-                digits--;
-                index++;
-            }
-            // round value if there is a 4th digit
-            if (!endOfLine() && Character.isDigit(buffer[index]) && digits == 0)
-            {
-                if (buffer[index] >= '5') number++;
-            }
-            // skip any remaining digits
-            while (!endOfLine() && Character.isDigit(buffer[index]))
-            {
-                index++;
-            }
-            if (negative) number = -number;
-            word.setFraction(number);
-        }
+        // Parse the string into a double
+        double value = Double.parseDouble(number.toString());
+        word.setValue(value);
 
         return word;
     }
 
+    
+    /**
+     * Utility method to check if the index is at or past the end of the line
+     * buffer. This is implemented as a method for code readability.
+     * 
+     * @return True is at or past the end of the line buffer. False otherwise,
+     */
     protected boolean endOfLine()
     {
         return index >= buffer.length;
     }
 
+    
+    /**
+     * Utility method to skip over white space in the line. Any character less
+     * than a space (' ') is considered white space. That includes tab, CR, and
+     * LF.
+     */
     protected void skipWhitespace()
     {
         while (!endOfLine() && (buffer[index] <= ' '))
             index++;
     }
 
-    protected void skipComment()
+    
+    /**
+     * Parses a comment field and returns it as a CodeWord.
+     * 
+     * @return a CodeWord containing the comment
+     */
+    protected CodeWord parseComment()
     {
-        while (!endOfLine() &&  (buffer[index] != ')'))
+        StringBuilder text = new StringBuilder();
+
+        if (!endOfLine() && (buffer[index] == '('))
         {
             index++;
         }
+
+        while (!endOfLine() && (buffer[index] != ')'))
+        {
+            text.append(buffer[index]);
+            index++;
+        }
         if (endOfLine())
-        {    
+        {
             throw new RuntimeException(position() + " Reached end of line inside comment");
         }
-        index++; //skip the ')' character
+        index++; // skip the ')' character
+
+        CodeWord word = new CodeWord('(');
+        word.setText(text.toString());
+        return word;
     }
 
-//    protected int readDigits(int maxLength)
-//    {
-//        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected digit");
-//
-//        int count = 0;
-//        int value = 0;
-//        while (!endOfLine() && Character.isDigit(chars[i]))
-//        {
-//            value = (value * 10) + (Character.getNumericValue(chars[i]) - '0');
-//            i++;
-//            count++;
-//            if (count > maxLength) throw new RuntimeException(position() + " Too many digits; max " + maxLength);
-//        }
-//        return value;
-//    }
-
-//    protected double readNumber()
-//    {
-//        boolean negative = false;
-//        int integer = 0;
-//        int numerator = 0;
-//        int denominator = 1;
-//
-//        skipWhitespace();
-//        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected number");
-//
-//        if (chars[i] == '-')
-//        {
-//            negative = true;
-//            i++;
-//        }
-//        else if (chars[i] == '+')
-//        {
-//            negative = false;
-//            i++;
-//        }
-//        else if (!Character.isDigit(chars[i]))
-//        {
-//            throw new RuntimeException(position() + "Expected digit; found " + chars[i]);
-//        }
-//
-//        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected number");
-//
-//        // Read integer portion
-//        integer = 0;
-//        while (!endOfLine() && Character.isDigit(chars[i]))
-//        {
-//            integer = (integer * 10) + (chars[i] - '0');
-//            i++;
-//        }
-//
-//        if (!endOfLine() && chars[i] == '.')
-//        {
-//            i++;
-//            // Read fractional portion
-//            numerator = 0;
-//            denominator = 0;
-//            while (!endOfLine() && Character.isDigit(chars[i]))
-//            {
-//                numerator = (numerator * 10) + (chars[i] - '0');
-//                denominator *= 10;
-//                i++;
-//            }
-//        }
-//
-//        double value = (double) integer + ((double) numerator / (double) denominator);
-//        if (negative) value = -value;
-//        return value;
-//    }
-
+    
+    /**
+     * Utility method to return the current G code file character position as
+     * [line,char] used for reporting in Exceptions.
+     * 
+     * @return String with the current character position
+     */
     protected String position()
     {
         return "[" + lineNum + ":" + index + "] ";
     }
-
 }

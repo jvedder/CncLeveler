@@ -4,87 +4,82 @@ import java.util.Set;
 
 public class CodeWord
 {
+
     /**
-     * The code word 
-     * G = General Command
-     * L = Loop Count or G10 register number
-     * M = Miscellaneous function
-     * N = Line Number or G10 parameter number
-     * P = Parameter address
-     * T = Tool Selection
-     */
-    public static final Set<Character> COMMANDS = Set.of('G','L','M','N','P','T');
-    
-    /**
-     * X,Y,Z = Axis Position
-     * I,J,K = Arc Center
-     * F = Feed Rate
-     * R = Radius
-     * S = (Spindle) Speed     
-     */
-    public static final Set<Character> VALUES = Set.of('X','Y','Z','I','J','K','F','R','S');
-    
-    /** 
      * The single character code (G, M X, etc.) that defines this code word.
      */
     char code = '*';
 
     /**
-     * Either the value of this code word (1 for G01) or the coordinate value in microns for positional code words (X,Y,Z, etc).
+     * The numeric portion of this code word
      */
-    int value = 0;
- 
-    /** 
-     * The sub-code for some code words. For example, the 1 in G28.1.  Zero for positional code words (X,Y,Z, etc).
-     */
-    int fraction = 0;
-    
+    double value = 0;
+
     /**
-     * Constructor with only the  
-     * @param c
+     * The integer portion of this gcode as a convenience
+     */
+    int intValue = 0;
+
+    /**
+     * The text if this word is a comment
+     */
+    String text = null;
+
+    /**
+     * Constructor
+     * 
+     * @param codeLetter the letter that defines this code word or '(' 
      */
     public CodeWord(char codeLetter)
     {
         code = codeLetter;
     }
-    
-    public void setValue(int val)
+
+    /**
+     * Sets the numberic value of this code word
+     * @param value
+     */
+    public void setValue(double value)
     {
-        value = val;
-    }
- 
-    public void setFraction(int frac)
-    {
-        fraction = frac;
-    }
-    
-    public double toDouble() 
-    {
-        if (value < 0)
-        {
-            return (double)value - (double)fraction / 1000.0D;
-        }
-        else
-        {
-            return (double)value + (double)fraction / 1000.0D;
-        }
-    }
- 
-    public String toString()
-    {
-        if (fraction != 0)
-        {
-            String s = String.format("%c%d.%03d", code, value, fraction);
-            while (s.endsWith("0"))
-            {
-                s = s.substring(0,s.length()-1);
-            }
-            return s;
-        }
-        else
-        {
-            return String.format("%c%d", code, value);
-        }
+        this.value = value;
+        this.intValue = (int) Math.floor(value);
     }
 
+    /**
+     * Sets the comment text for this code word
+     * @param text
+     */
+    public void setText(String text)
+    {
+        this.text = text;
+    }
+
+    /**
+     * Returns this code word as valid G code text 
+     */
+    public String toString()
+    {
+        String s;
+        if (code == '(')
+        {
+            s = "(" + text + ")";
+        }
+        else
+        {
+            s = String.format("%c%.3f", code, value);
+            
+            // remove any trailing zeros
+            while (s.endsWith("0"))
+            {
+                s = s.substring(0, s.length() - 1);
+            }
+            
+            // remove any trailing decimal point
+            if (s.endsWith("."))
+            {
+                s = s.substring(0, s.length() - 1);
+            }
+        }
+        return s;
+    }
 }
