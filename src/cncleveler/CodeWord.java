@@ -24,6 +24,17 @@ public class CodeWord
      * The text if this word is a comment
      */
     String text = null;
+    
+    /**
+     * The line position of this code word in the source file
+     */
+    int line = 0;
+    
+    /**
+     * The character position of this code word in the source file
+     */
+    int character = 0;
+    
 
     /**
      * Constructor
@@ -36,7 +47,7 @@ public class CodeWord
     }
 
     /**
-     * Sets the numberic value of this code word
+     * Sets the numeric value of this code word
      * @param value
      */
     public void setValue(double value)
@@ -53,6 +64,27 @@ public class CodeWord
     {
         this.text = text;
     }
+    
+    /**
+     * Sets the line and character position of this code word in the source file. Printed in error message for debugging.
+     * @param line  The line position of this code word in the source file
+     * @param character  The character position of this code word in the source file
+     */
+    public void setPosition(int line, int character)
+    {
+        this.line = line;
+        this.character = character;
+    }
+    
+    /**
+     * Gets the comment text for this code word
+     * @param text
+     */
+    public String getPosition()
+    {
+        return "[" + line + ":" + character + "] ";
+    }
+    
 
     /**
      * Returns this code word as valid G code text 

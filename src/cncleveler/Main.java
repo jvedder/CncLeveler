@@ -30,8 +30,11 @@ public class Main
         //PyPlotGrid plot = new PyPlotGrid();
         //plot.plot(grid);
         
+        GCodeLexer lexer = new GCodeLexer();
+        List<Block> blocks = lexer.read("gcode.nc");
+        
         GCodeParser parser = new GCodeParser();
-        parser.read("gcode.nc");
+        parser.parse(blocks);
         
         logger.info("Done.");
      }

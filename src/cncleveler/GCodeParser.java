@@ -1,222 +1,156 @@
 package cncleveler;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.logging.Logger;
 
 public class GCodeParser
 {
-    protected static Logger logger = Logger.getLogger((Main.class.getName()));
 
-    protected static final boolean DEBUG = true;
-
-    private static final Set<Character> NUMBER_CHARS = Set.of('+', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-            '9', '.');
-
-    /**
-     * List of valid G code letters 
-     * 
-     * <pre>
-     * G = General Command 
-     * L = Loop Count or G10 register number 
-     * M = Miscellaneous function 
-     * N = Line Number or G10 parameter number 
-     * P = Parameter address 
-     * T = Tool Selection
-     * X,Y,Z = Axis Position 
-     * I,J,K = Arc Center 
-     * F = Feed Rate 
-     * R = Radius 
-     * S = (Spindle) Speed
-     * </pre>
-     */
-    public static final Set<Character> COMMANDS = Set.of('G', 'L', 'M', 'N', 'P', 'T', 'X', 'Y', 'Z', 'I', 'J', 'K',
-            'F', 'R', 'S');
-
-    
-    /**
-     * Character buffer to hold the current line being parsed.
-     */
-    protected char[] buffer;
-
-    
-    /**
-     * Index into the character buffer.
-     */
-    protected int index;
-    
-    
-    /**
-     * Current line number in the file. Printed on parse exceptions.
-     */
-    protected int lineNum;
-
-    
-    /**
-     * Reads and parses a G code file. 
-     * @param filename The filename (and path) to the G code file
-     * @throws IOException on an I/O error
-     */
-    public void read(String filename) throws IOException
+    public void parse(List<Block> blocks)
     {
-        // Show progress
-        logger.info("Opening: " + filename);
+        State globalState = new State();
 
-        // Open input file for reading
-        Path inFile = Paths.get(filename);
-
-        List<CodeWord> block = new ArrayList<>();
-
-        // BufferedReader supports readLine()
-        BufferedReader in = Files.newBufferedReader(inFile, StandardCharsets.UTF_8);
-        lineNum = 0;
-        String line;
-        while ((line = in.readLine()) != null)
+        for (Block block : blocks)
         {
-            lineNum++;
-            buffer = line.trim().toUpperCase().toCharArray();
-            index = 0;
-            block.clear();
-
-            while (index < buffer.length)
-            {
-                if (COMMANDS.contains(buffer[index]))
-                {
-                    block.add(parseWord());
-                }
-                else if (buffer[index] == '(')
-                {
-                    // skip over (COMMENTS)
-                    block.add(parseComment());
-                }
-                else if (buffer[index] <= ' ')
-                {
-                    // skip over white space
-                    index++;
-                }
-                else if ((buffer[index] == '%'))
-                {
-                    // skip over %
-                    index++;
-                }
-                else
-                {
-                    throw new RuntimeException(position() + "Unrecognized code letter: " + buffer[index]);
-                }
-            }
+            State state = new State();
 
             for (CodeWord word : block)
             {
-                System.out.print(word.toString());
+                switch (word.code)
+                {
+                    case 'N':
+                        state.n.set(word.toString());
+                        break;
+
+                    case 'G':
+                        switch (word.intValue)
+                        {
+                            case 0: // Rapid positioning
+                            case 1: // Linear interpolation
+                            case 2: // Circular interpolation, clockwise
+                            case 3: // Circular interpolation, counter-clockwise
+                                state.motion.set(word.toString());
+                                break;
+                            case 17: // XY plane selection
+                            case 18: // ZX plane selection
+                            case 19: // YZ plane selection
+                                state.plane.set(word.toString());
+                                break;
+                            case 90: // Absolute programming
+                            case 91: // Incremental programming
+                                state.distance.set(word.toString());
+                                break;
+                            case 93: // Strokes per minute
+                            case 94: // Feed rate per minute
+                                state.feedRate.set(word.toString());
+                                break;
+                            case 20: // Programming in inches
+                            case 21: // Programming in millimeters
+                                state.units.set(word.toString());
+                                break;
+                            case 40: // tool length cancel
+                                state.cutterComp.set(word.toString());
+                                break;
+                            case 41: // cutter radius compensation left
+                            case 42: // cutter radius compensation left
+                                throw new RuntimeException(
+                                        word.getPosition() + "Cutter Compensation {G41,G42} not supported");
+                            case 43: // Tool height offset compensation negative
+                            case 44: // Tool height offset compensation positive
+                                throw new RuntimeException(
+                                        word.getPosition() + "Cutter tool height compensation {G43,G44} not supported");
+                            case 49: // tool length cancel
+                                state.toolLength.set(word.toString());
+                            case 98: // Return to initial Z level in canned
+                                     // cycle
+                            case 99: // Return to R level in canned cycle
+                                throw new RuntimeException(
+                                        word.getPosition() + "Return mode in canned cycles {G98,G99} not supported.");
+                            case 54: // Work coordinate system 1
+                            case 55: // Work coordinate system 2
+                            case 56: // Work coordinate system 3
+                            case 57: // Work coordinate system 4
+                            case 58: // Work coordinate system 5
+                            case 59: // Work coordinate system 6
+                                state.workCoordSystem.set(word.toString());
+                                break;
+                            case 61: // path control mode
+                            case 64: // path control mode
+                                throw new RuntimeException(
+                                        word.getPosition() + "Path control mode {G61, G61.1, G64} not supported.");
+                            default:
+                                throw new RuntimeException(
+                                        word.getPosition() + "Unrecognized G code: " + word.toString());
+                        }
+                        break;
+
+                    case 'M':
+                        switch (word.intValue)
+                        {
+                            case 0: // Compulsory stop
+                            case 1: // Optional stop
+                            case 2: // End of Program
+                            case 30: // End of program, with return to program
+                                     // top
+                                state.programFlow.set(word.toString());
+                                break;
+                            case 60: // Automatic pallet change
+                                throw new RuntimeException(
+                                        word.getPosition() + "Automatic pallet change {M60} not supported.");
+                            case 3:
+                            case 4:
+                            case 5:
+                                state.spindle.set(word.toString());
+                                break;
+                            case 6:
+                                throw new RuntimeException(word.getPosition() + "Tool change {M6} not supported.");
+                            case 7:
+                            case 8:
+                            case 9:
+                                state.coolant.set(word.toString());
+                                break;
+                            default:
+                                throw new RuntimeException(
+                                        word.getPosition() + "Unrecognized M code: " + word.toString());
+                        }
+                        break;
+                    case 'X':
+                        state.x.set(word.value);
+                        break;
+                    case 'Y':
+                        state.y.set(word.value);
+                        break;
+                    case 'Z':
+                        state.z.set(word.value);
+                        break;
+                    case 'F':
+                        state.f.set(word.value);
+                        break;
+                    case 'S':
+                        state.s.set(word.value);
+                        break;
+
+                    case 'I':
+                        state.i.set(word.value);
+                        break;
+                    case 'J':
+                        state.j.set(word.value);
+                        break;
+                    case 'K':
+                        state.k.set(word.value);
+                        break;
+                    case 'R':
+                        state.r.set(word.value);
+                        break;
+                        
+                    default:
+                        // add miscellaneous code words (L,
+                        state.add(word);
+                        break;
+                }
+
             }
-            System.out.println();
+            System.out.println(state.toString());
+            
         }
-
-    }
-
-    
-    /**
-     * Parses a standard G code word: a letter followed by a number and returns
-     * a CodeWord.
-     * 
-     * @return a CodeWord with the parsed G Code word
-     */
-    protected CodeWord parseWord()
-    {
-        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected letter");
-
-        CodeWord word = new CodeWord(buffer[index]);
-        index++;
-
-        // White space allowed before number
-        skipWhitespace();
-        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected number");
-
-        // Put all number characters into a string
-        StringBuilder number = new StringBuilder();
-        while (!endOfLine() && NUMBER_CHARS.contains(buffer[index]))
-        {
-            number.append(buffer[index]);
-            index++;
-        }
-        // Parse the string into a double
-        double value = Double.parseDouble(number.toString());
-        word.setValue(value);
-
-        return word;
-    }
-
-    
-    /**
-     * Utility method to check if the index is at or past the end of the line
-     * buffer. This is implemented as a method for code readability.
-     * 
-     * @return True is at or past the end of the line buffer. False otherwise,
-     */
-    protected boolean endOfLine()
-    {
-        return index >= buffer.length;
-    }
-
-    
-    /**
-     * Utility method to skip over white space in the line. Any character less
-     * than a space (' ') is considered white space. That includes tab, CR, and
-     * LF.
-     */
-    protected void skipWhitespace()
-    {
-        while (!endOfLine() && (buffer[index] <= ' '))
-            index++;
-    }
-
-    
-    /**
-     * Parses a comment field and returns it as a CodeWord.
-     * 
-     * @return a CodeWord containing the comment
-     */
-    protected CodeWord parseComment()
-    {
-        StringBuilder text = new StringBuilder();
-
-        if (!endOfLine() && (buffer[index] == '('))
-        {
-            index++;
-        }
-
-        while (!endOfLine() && (buffer[index] != ')'))
-        {
-            text.append(buffer[index]);
-            index++;
-        }
-        if (endOfLine())
-        {
-            throw new RuntimeException(position() + " Reached end of line inside comment");
-        }
-        index++; // skip the ')' character
-
-        CodeWord word = new CodeWord('(');
-        word.setText(text.toString());
-        return word;
-    }
-
-    
-    /**
-     * Utility method to return the current G code file character position as
-     * [line,char] used for reporting in Exceptions.
-     * 
-     * @return String with the current character position
-     */
-    protected String position()
-    {
-        return "[" + lineNum + ":" + index + "] ";
     }
 }
