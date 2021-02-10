@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.management.RuntimeErrorException;
-
 public class GCodeLexer
 {
     protected static Logger logger = Logger.getLogger((Main.class.getName()));

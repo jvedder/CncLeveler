@@ -13,12 +13,14 @@ public class GCodeParser
         {
             State state = new State();
 
+            
+
             for (CodeWord word : block)
             {
                 switch (word.code)
                 {
                     case 'N':
-                        state.n.set(word.toString());
+                        state.n.set(word);
                         break;
 
                     case 'G':
@@ -28,27 +30,27 @@ public class GCodeParser
                             case 1: // Linear interpolation
                             case 2: // Circular interpolation, clockwise
                             case 3: // Circular interpolation, counter-clockwise
-                                state.motion.set(word.toString());
+                                state.motion.set(word);
                                 break;
                             case 17: // XY plane selection
                             case 18: // ZX plane selection
                             case 19: // YZ plane selection
-                                state.plane.set(word.toString());
+                                state.plane.set(word);
                                 break;
                             case 90: // Absolute programming
                             case 91: // Incremental programming
-                                state.distance.set(word.toString());
+                                state.distance.set(word);
                                 break;
                             case 93: // Strokes per minute
                             case 94: // Feed rate per minute
-                                state.feedRate.set(word.toString());
+                                state.feedRate.set(word);
                                 break;
                             case 20: // Programming in inches
                             case 21: // Programming in millimeters
-                                state.units.set(word.toString());
+                                state.units.set(word);
                                 break;
                             case 40: // tool length cancel
-                                state.cutterComp.set(word.toString());
+                                state.cutterComp.set(word);
                                 break;
                             case 41: // cutter radius compensation left
                             case 42: // cutter radius compensation left
@@ -59,7 +61,8 @@ public class GCodeParser
                                 throw new RuntimeException(
                                         word.getPosition() + "Cutter tool height compensation {G43,G44} not supported");
                             case 49: // tool length cancel
-                                state.toolLength.set(word.toString());
+                                state.toolLength.set(word);
+                                break;
                             case 98: // Return to initial Z level in canned
                                      // cycle
                             case 99: // Return to R level in canned cycle
@@ -71,7 +74,7 @@ public class GCodeParser
                             case 57: // Work coordinate system 4
                             case 58: // Work coordinate system 5
                             case 59: // Work coordinate system 6
-                                state.workCoordSystem.set(word.toString());
+                                state.workCoordSystem.set(word);
                                 break;
                             case 61: // path control mode
                             case 64: // path control mode
@@ -91,7 +94,7 @@ public class GCodeParser
                             case 2: // End of Program
                             case 30: // End of program, with return to program
                                      // top
-                                state.programFlow.set(word.toString());
+                                state.programFlow.set(word);
                                 break;
                             case 60: // Automatic pallet change
                                 throw new RuntimeException(
@@ -99,14 +102,14 @@ public class GCodeParser
                             case 3:
                             case 4:
                             case 5:
-                                state.spindle.set(word.toString());
+                                state.spindle.set(word);
                                 break;
                             case 6:
                                 throw new RuntimeException(word.getPosition() + "Tool change {M6} not supported.");
                             case 7:
                             case 8:
                             case 9:
-                                state.coolant.set(word.toString());
+                                state.coolant.set(word);
                                 break;
                             default:
                                 throw new RuntimeException(
@@ -114,43 +117,50 @@ public class GCodeParser
                         }
                         break;
                     case 'X':
-                        state.x.set(word.value);
+                        state.x.set(word);
                         break;
                     case 'Y':
-                        state.y.set(word.value);
+                        state.y.set(word);
                         break;
                     case 'Z':
-                        state.z.set(word.value);
+                        state.z.set(word);
                         break;
                     case 'F':
-                        state.f.set(word.value);
+                        state.f.set(word);
                         break;
                     case 'S':
-                        state.s.set(word.value);
+                        state.s.set(word);
                         break;
 
                     case 'I':
-                        state.i.set(word.value);
+                        state.i.set(word);
                         break;
                     case 'J':
-                        state.j.set(word.value);
+                        state.j.set(word);
                         break;
                     case 'K':
-                        state.k.set(word.value);
+                        state.k.set(word);
                         break;
                     case 'R':
-                        state.r.set(word.value);
+                        state.r.set(word);
                         break;
-                        
+                    case '(':
+                        state.comment.set(word);
+                        break;
                     default:
-                        // add miscellaneous code words (L,
-                        state.add(word);
-                        break;
+                        throw new RuntimeException(
+                                word.getPosition() + "Unrecognized code word: " + word.toString());
                 }
 
             }
-            System.out.println(state.toString());
+            globalState.mergeWith(state);
             
+            System.out.println("----------------------------------");
+            System.out.println("Orig:   " + block.originalText);
+            System.out.println("Block:  " + block.toString());
+            System.out.println("State:  " + state.toString());
+            System.out.println("Global: " + globalState.toString());
+
         }
     }
 }
