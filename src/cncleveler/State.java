@@ -8,7 +8,11 @@ public class State
 
     private final EnumMap<Axis, Double> axisMap = new EnumMap<>(Axis.class);
     
-    private String comment = null;;
+    private String comment = null;
+    
+    public int lineNum = 0;
+    
+    public String originalText = "";
        
     /**
      * Constructor

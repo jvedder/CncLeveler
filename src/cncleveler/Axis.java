@@ -19,8 +19,17 @@ public enum Axis
     J('J'),
     K('K'),
     
-    //Radius
-    RADIUS('R');
+    // Radius
+    RADIUS('R'),
+    
+    // Loop Count or G10 register number 
+    LOOP('L'),
+    
+    // Parameter address 
+    PARAM('P'),
+
+    // Tool Selection
+    TOOL('T');
     
     private final char code;
 
