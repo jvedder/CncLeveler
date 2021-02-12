@@ -1,50 +1,76 @@
 package cncleveler;
 
+/**
+ * Defines labels for each supported axis or parameter. Also flags if the value
+ * is modal -- true if the value carries forward to the next G code line (block).
+ */
 public enum Axis
 {
     // Line Number
-    LINE_NUM('N'),
+    LINE_NUM('N', true),
     
     // Feed and Speed
-    FEED('F'),
-    SPEED('S'),
+    FEED('F', true),
+    SPEED('S', true),
     
     //Cartesian Axes
-    X('X'),
-    Y('Y'),
-    Z('Z'),
+    X('X', true),
+    Y('Y', true),
+    Z('Z', true),
     
     // Arc Center Offset
-    I('I'),
-    J('J'),
-    K('K'),
+    I('I', false),
+    J('J', false),
+    K('K', false),
     
     // Radius
-    RADIUS('R'),
+    RADIUS('R', false),
     
     // Loop Count or G10 register number 
-    LOOP('L'),
+    LOOP('L', false),
     
     // Parameter address 
-    PARAM('P'),
+    PARAM('P', false),
 
     // Tool Selection
-    TOOL('T');
+    TOOL('T', false);
     
-    private final char code;
 
-    private Axis(char code)
+    private final char letter;
+    private final boolean modal;
+
+    /* 
+     * Private constructor only used by the enum definitions themselves.
+     * 
+     * @param letter
+     *            The G code letter that this enum represents
+     * @param modal
+     *            True if this G code is modal
+     */
+    private Axis(char letter, boolean modal)
     {
-        this.code = code;
+        this.letter = letter;
+        this.modal = modal;
     }
 
-    public char code() { return code; }
+    /* Getters */
+    public char letter() { return letter; }
+    public boolean modal() { return modal; }
     
-    public static Axis find(char code)
+    
+    /**
+     * Utility method to find and return the enum value for a specific letter.
+     * Returns null if not found.
+     * 
+     * @param letter
+     *            the letter to search for
+     * @return the matching enum or null if not found
+     */
+    public static Axis find(char letter)
     {
         for (Axis a : Axis.values())
         {
-            if(a.code() == code) return a;
+            if(a.letter() == letter) return a;
         }
         return null;
     }

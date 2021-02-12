@@ -1,5 +1,9 @@
 package cncleveler;
 
+/**
+ * Defines labels for each supported modal G code word. Also defines the modal group
+ * that the G code belongs to.
+ */
 public enum Mode
 {
  // Motion modes: {G0, G1, G2, G3}
@@ -63,15 +67,33 @@ public enum Mode
     private final String code;
     private final Group group;
 
+    /* 
+     * Private constructor only used by the enum definitions themselves.
+     * 
+     * @param code
+     *            The full G code word that the enum represents
+     * @param group
+     *            The modal group that this G code belongs to
+     */
     private Mode(String code , Group group)
     {
         this.code = code;
         this.group = group;
     }
 
+    /* Getters */
     public String code() { return code; }
     public Group group() { return group; }
     
+    
+    /**
+     * Utility method to find and return the enum value for a specific G code word.
+     * Returns null if not found.
+     * 
+     * @param code
+     *            the code word to search for
+     * @return the matching enum or null if not found
+     */
     public static Mode find(String code)
     {
         for (Mode m : Mode.values())

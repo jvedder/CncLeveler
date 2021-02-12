@@ -33,7 +33,7 @@ public class Main
         GCodeParser parser = new GCodeParser();
         List<State> states = parser.read("gcode.nc");
         parser = null;
-        
+
         replayStates(states);
 
         logger.info("Done.");

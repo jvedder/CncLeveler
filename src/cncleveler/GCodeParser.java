@@ -127,11 +127,13 @@ public class GCodeParser
                 if (MODE_LETTERS.contains(buffer[index]))
                 {
                     parseValue();
-                    String code = formatCode();
+                    String code = State.format(letter, value);
                     Mode mode = Mode.find(code);
                     if (mode == null)
                     {
-                        throw new RuntimeException(position() + "Unrecognized code word: " + code);
+                        String msg = position() + "Unrecognized code word: " + code;
+                        logger.severe(msg);
+                        throw new RuntimeException(msg);
                     }
                     state.set(mode);
                 }
@@ -141,8 +143,9 @@ public class GCodeParser
                     Axis axis = Axis.find(letter);
                     if (axis == null)
                     {
-                        String code = formatCode();
-                        throw new RuntimeException(position() + "Unrecognized code word: " + code);
+                        String msg = position() + "Unrecognized code word: " + State.format(letter, value);
+                        logger.severe(msg);
+                        throw new RuntimeException(msg);
                     }
                     state.set(axis, value);
                 }
@@ -163,7 +166,9 @@ public class GCodeParser
                 }
                 else
                 {
-                    throw new RuntimeException(position() + "Unrecognized code letter: " + buffer[index]);
+                    String msg = position() + "Unrecognized code letter: " + buffer[index];
+                    logger.severe(msg);
+                    throw new RuntimeException(msg);
                 }
             }
 
@@ -182,12 +187,21 @@ public class GCodeParser
         letter = buffer[index];
         index++;
 
-        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected letter");
+        if (endOfLine()) 
+        {
+            String msg = position() + " Reached end of line; expected letter";
+            logger.severe(msg);
+            throw new RuntimeException(msg);
+        }
 
         // Assume white space allowed before number
         skipWhitespace();
-        if (endOfLine()) throw new RuntimeException(position() + " Reached end of line; expected number");
-
+        if (endOfLine())
+        {
+            String msg = position() + " Reached end of line; expected number";
+            logger.severe(msg);
+            throw new RuntimeException(msg);
+        }
         // Put all number characters into a string
         StringBuilder number = new StringBuilder();
         while (!endOfLine() && NUMBER_CHARS.contains(buffer[index]))
@@ -200,30 +214,29 @@ public class GCodeParser
         intValue = (int) Math.floor(value);
     }
 
-    /**
-     * Utility method to take the letter and value and generate a canonical
-     * version of g code word. This version is used for comparing against enum
-     * values.
-     * 
-     * @return the formated code word
-     */
-    protected String formatCode()
-    {
-        String s = String.format("%c%.3f", letter, value);
-
-        // remove any trailing zeros
-        while (s.endsWith("0"))
-        {
-            s = s.substring(0, s.length() - 1);
-        }
-
-        // remove any trailing decimal point
-        if (s.endsWith("."))
-        {
-            s = s.substring(0, s.length() - 1);
-        }
-        return s;
-    }
+//    /**
+//     * Utility method to take the letter and value and generate a formated
+//     * G code word. The result is suitable for outputing to a G code file.
+//     * 
+//     * @return the formated code word
+//     */
+//    protected String formatCode()
+//    {
+//        String s = String.format("%c%.3f", letter, value);
+//
+//        // remove any trailing zeros
+//        while (s.endsWith("0"))
+//        {
+//            s = s.substring(0, s.length() - 1);
+//        }
+//
+//        // remove any trailing decimal point
+//        if (s.endsWith("."))
+//        {
+//            s = s.substring(0, s.length() - 1);
+//        }
+//        return s;
+//    }
 
     /**
      * Utility method to check if the index is at or past the end of the line
@@ -262,7 +275,9 @@ public class GCodeParser
         }
         if (endOfLine())
         {
-            throw new RuntimeException(position() + " Reached end of line inside comment");
+            String msg = position() + " Reached end of line inside comment";
+            logger.severe(msg);
+            throw new RuntimeException(msg);
         }
         text.append(buffer[index]);
         index++;
@@ -278,7 +293,7 @@ public class GCodeParser
      */
     protected String position()
     {
-        return "[" + lineNum + ":" + index + "] ";
+        return "[Line: " + lineNum + ", Char: " + index + "] ";
     }
 
 }
