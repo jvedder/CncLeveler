@@ -182,7 +182,11 @@ public class State
         for (Group g : Group.values())
         {
             Mode m = stateMap.get(g);
-            if (m != null) sb.append(m.code());
+            if (m != null) 
+            {
+                if (sb.length() > 0) sb.append(' ');
+                sb.append(m.code());
+            }
         }
 
         for (Axis a : Axis.values())
@@ -190,12 +194,14 @@ public class State
             Double d = axisMap.get(a);
             if (d != null)
             {
+                if (sb.length() > 0) sb.append(' ');
                 sb.append(format(a.letter(), d));
             }
         }
 
         if (comment != null)
         {
+            if (sb.length() > 0) sb.append(' ');
             sb.append(comment);
         }
 
