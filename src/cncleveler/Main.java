@@ -13,7 +13,7 @@ import cncleveler.logging.CncLogFormatter;
 
 public class Main
 {
-    private static Logger logger = Logger.getLogger((Main.class.getName()));
+    private static final Logger logger = Logger.getLogger((Main.class.getName()));
     private static FileHandler logFileHander;
     private static ConsoleHandler consoleHandler;
 

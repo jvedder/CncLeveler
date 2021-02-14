@@ -17,9 +17,7 @@ import java.util.logging.Logger;
  */
 public class ProbeLogReader
 {
-    private static Logger logger = Logger.getLogger((Main.class.getName()));
-
-    private static final boolean DEBUG = true;
+    private static final Logger logger = Logger.getLogger((Main.class.getName()));
 
     /**
      * Reads the specified probe log file and returns a list of probe values in file order.
@@ -31,7 +29,7 @@ public class ProbeLogReader
     public static List<Point3> read(String filename) throws IOException
     {
         // Show progress
-        logger.info("Opening: " + filename);
+        logger.info("Reading: " + filename);
 
         // Open input file for reading
         Path inFile = Paths.get(filename);
@@ -60,7 +58,6 @@ public class ProbeLogReader
                     probe.y = Double.parseDouble(values[1]);
                     probe.z = Double.parseDouble(values[2]);
                     probes.add(probe);
-                    if (DEBUG) System.out.println(probe);
                 }
                 catch (Exception ex)
                 {
@@ -70,10 +67,27 @@ public class ProbeLogReader
         }
         in.close();
 
+        logProbeValues(probes);
+
         // Show progress
-        logger.info("Read " + probes.size() + " probe points");
+        logger.info("Reading complete");
 
         return probes;
+    }
+
+    /**
+     * Reports the raw probe points to the logger for debug.
+     * 
+     * @param probes the list of raw probe point values
+     */
+    private static void logProbeValues(List<Point3> probes)
+    {
+        logger.info("   Raw Probe Points: " + probes.size());
+
+        for (Point3 probe : probes)
+        {
+            logger.fine("   " + probe.toString());
+        }
     }
 
 }

@@ -105,7 +105,7 @@ public class PyPlotGrid
             for (int i = 0; i < probeGrid.xsize; i++)               
             {
                 if (i > 0) out.write(',');
-                out.write(String.format("%.3f", probeGrid.zprobe[j][i] - probeGrid.z0));
+                out.write(String.format("%.3f", probeGrid.zprobe[j][i]));
             }
             out.write("]\n");
             out.write("ax.plot(np.array(x),np.array(y),np.array(z),linewidth=2,color='black')\n");
@@ -135,7 +135,7 @@ public class PyPlotGrid
             for (int j = 0; j < probeGrid.ysize; j++)                 
             {
                 if (j > 0) out.write(',');
-                out.write(String.format("%.3f", probeGrid.zprobe[j][i] - probeGrid.z0));
+                out.write(String.format("%.3f", probeGrid.zprobe[j][i]));
             }
             out.write("]\n");
             out.write("ax.plot(np.array(x),np.array(y),np.array(z),linewidth=2,color='black')\n");

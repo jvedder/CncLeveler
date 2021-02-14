@@ -11,13 +11,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * Reads and parses a text file of G Code commands. Processes each line (called a block in G code terminology) 
+ * into a State object and returns a list of States objects that represents the G code file.
+ */
 public class GCodeParser
 {
     /**
      * Logger for reporting status
      */
     private static final Logger logger = Logger.getLogger((Main.class.getName()));
-       
+
     /**
      * List of characters allowed in a number
      */
@@ -25,8 +29,7 @@ public class GCodeParser
             '9', '.');
 
     /**
-     * List of valid G code state letters. These correspond to letters in the
-     * Mode enum.
+     * List of valid G code state letters. These correspond to letters in the Mode enum.
      * 
      * <pre>
      * G = General Command 
@@ -36,8 +39,8 @@ public class GCodeParser
     public static final Set<Character> MODE_LETTERS = Set.of('G', 'M');
 
     /**
-     * List of valid G code axis letters. These correspond to letters in the
-     * Axis enum, which includes both axes and parameters.
+     * List of valid G code axis letters. These correspond to letters in the Axis enum, which
+     * includes both axes and parameters.
      * 
      * <pre>
      * N = Line Number or G10 parameter number 
@@ -87,12 +90,9 @@ public class GCodeParser
     /**
      * Reads and parses a G code file.
      * 
-     * @param filename
-     *            The filename (and path) to the G code file
-     * @return An ordered list of states that contain the parsed information
-     *         from the G code file.
-     * @throws IOException
-     *             on any I/O error
+     * @param filename The filename (and path) to the G code file
+     * @return An ordered list of states that contain the parsed information from the G code file.
+     * @throws IOException on any I/O error
      */
     public List<State> read(String filename) throws IOException
     {
@@ -131,15 +131,11 @@ public class GCodeParser
                     Mode mode = Mode.find(code);
                     if (mode == null)
                     {
-                        String msg = position() + "Unrecognized code word: " + code;
-                        logger.severe(msg);
-                        //throw new RuntimeException(msg);
+                        logError("Unrecognized code word:", code);
                     }
                     if (state.getGroup(mode.group()) != null)
                     {
-                        String msg = position() + "Duplicate Mode Group: " + mode.code() + " to " + mode.group().name();
-                        logger.severe(msg);
-                        //throw new RuntimeException(msg);                          
+                        logError("Duplicate Mode Group:", mode.code() + " to " + mode.group().name());
                     }
                     state.setGroup(mode.group(), mode);
                 }
@@ -149,15 +145,11 @@ public class GCodeParser
                     Axis axis = Axis.find(letter);
                     if (axis == null)
                     {
-                        String msg = position() + "Unrecognized code word: " + State.format(letter, value);
-                        logger.severe(msg);
-                        //throw new RuntimeException(msg);
+                        logError("Unrecognized code word:", State.format(letter, value));
                     }
                     if (state.getAxis(axis) != null)
                     {
-                        String msg = position() + "Duplicate Axis: " + axis.letter();
-                        logger.severe(msg);
-                        //throw new RuntimeException(msg);                          
+                        logError("Duplicate Axis:", Character.toString(axis.letter()));
                     }
                     state.setAxis(axis, value);
                 }
@@ -166,9 +158,7 @@ public class GCodeParser
                     String comment = parseComment();
                     if (state.getComment() != null)
                     {
-                        String msg = position() + "Duplicate Comment: " + comment;
-                        logger.severe(msg);
-                        //throw new RuntimeException(msg);                          
+                        logError("Duplicate Comment: ", comment);
                     }
                     state.setComment(comment);
                 }
@@ -184,9 +174,7 @@ public class GCodeParser
                 }
                 else
                 {
-                    String msg = position() + "Unrecognized code letter: " + buffer[index];
-                    logger.severe(msg);
-                    //throw new RuntimeException(msg);
+                    logError("Unrecognized code letter: ", Character.toString(buffer[index]));
                 }
             }
 
@@ -197,28 +185,24 @@ public class GCodeParser
     }
 
     /**
-     * Parses the value portion of a G-Code Word and sets the class-level
-     * letter, value and intValue fields as a return value.
+     * Parses the value portion of a G-Code Word and sets the class-level letter, value and intValue
+     * fields as a return value.
      */
     protected void parseValue()
     {
         letter = buffer[index];
         index++;
 
-        if (endOfLine()) 
+        if (endOfLine())
         {
-            String msg = position() + " Reached end of line; expected letter";
-            logger.severe(msg);
-            //throw new RuntimeException(msg);
+            logError("Reached end of line; expected letter", null);
         }
 
         // Assume white space allowed before number
         skipWhitespace();
         if (endOfLine())
         {
-            String msg = position() + " Reached end of line; expected number";
-            logger.severe(msg);
-            //throw new RuntimeException(msg);
+            logError("Reached end of line; expected number", null);
         }
         // Put all number characters into a string
         StringBuilder number = new StringBuilder();
@@ -235,40 +219,14 @@ public class GCodeParser
         }
         catch (NumberFormatException ex)
         {
-            String msg = position() + " Unable to parse number: " + number;
-            logger.severe(msg);
-            //throw new RuntimeException(msg);            
+            logError("Unable to parse number: ", number.toString());
         }
         intValue = (int) Math.floor(value);
     }
 
-//    /**
-//     * Utility method to take the letter and value and generate a formated
-//     * G code word. The result is suitable for outputing to a G code file.
-//     * 
-//     * @return the formated code word
-//     */
-//    protected String formatCode()
-//    {
-//        String s = String.format("%c%.3f", letter, value);
-//
-//        // remove any trailing zeros
-//        while (s.endsWith("0"))
-//        {
-//            s = s.substring(0, s.length() - 1);
-//        }
-//
-//        // remove any trailing decimal point
-//        if (s.endsWith("."))
-//        {
-//            s = s.substring(0, s.length() - 1);
-//        }
-//        return s;
-//    }
-
     /**
-     * Utility method to check if the index is at or past the end of the line
-     * buffer. This is implemented as a method for code readability.
+     * Utility method to check if the index is at or past the end of the line buffer. This is
+     * implemented as a method for code readability.
      * 
      * @return True is at or past the end of the line buffer. False otherwise,
      */
@@ -278,9 +236,8 @@ public class GCodeParser
     }
 
     /**
-     * Utility method to skip over white space in the line. Any character less
-     * than a space (' ') is considered white space. That includes tab, CR, and
-     * LF.
+     * Utility method to skip over white space in the line. Any character less than a space (' ') is
+     * considered white space. That includes tab, CR, and LF.
      */
     protected void skipWhitespace()
     {
@@ -303,9 +260,7 @@ public class GCodeParser
         }
         if (endOfLine())
         {
-            String msg = position() + " Reached end of line inside comment";
-            logger.severe(msg);
-            throw new RuntimeException(msg);
+            logError("Reached end of line inside comment", null);
         }
         text.append(buffer[index]);
         index++;
@@ -314,14 +269,23 @@ public class GCodeParser
     }
 
     /**
-     * Utility method to return the current G code file character position as
-     * [line,char] used for reporting in Exceptions.
-     * 
-     * @return String with the current character position
+     * Formats an error message, adds file position, and log it to the log file.
      */
-    protected String position()
+    private void logError(String msg, String value)
     {
-        return "[Line: " + lineNum + ", Char: " + index + "] ";
-    }
+        StringBuilder sb = new StringBuilder();
 
+        sb.append(msg);
+        if (value != null)
+        {
+            sb.append(" ");
+            sb.append(value);
+        }
+        sb.append(" at line ");
+        sb.append(lineNum);
+        sb.append(", char ");
+        sb.append(index);
+        logger.severe(sb.toString());
+        // throw new RuntimeException(sb.toString());
+    }
 }

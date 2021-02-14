@@ -3,9 +3,10 @@ package cncleveler;
 /**
  * Defines the offset of the probe data in machine coordinates to work coordinates coordinates. This should be taken from the G54-G59 or G28, G30 settings.
  *
- *  Hard-coded for now. Need to implement a config reader.
+ *  Hard-coded for now. TODO: implement a config file reader.
  * 
  * <pre>
+ * Examples from GRBL $# command:
  * [G54:-278.000,-155.000,-1.000]
  * [G55:-232.000,-152.000,-15.000]
  * [G28:-238.000,-155.000,-1.000]
