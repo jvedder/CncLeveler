@@ -9,39 +9,34 @@ import java.util.EnumMap;
 public class State
 {
     /**
-     * Storage for the current state of each mode group. The current state of
-     * each group is defined by a Mode enum value. Null means that the group's
-     * state has not been set.
+     * Storage for the current state of each mode group. The current state of each group is defined
+     * by a Mode enum value. Null means that the group's state has not been set.
      * 
-     * Groups here roughly match the definitions in "The NIST RS274NGC
-     * Interpreter - Version 3" by Thomas R. Kramer, Frederick M. Proctor, Elena
-     * Messina (August 17, 2000)
+     * Groups here roughly match the definitions in "The NIST RS274NGC Interpreter - Version 3" by
+     * Thomas R. Kramer, Frederick M. Proctor, Elena Messina (August 17, 2000)
      */
     private final EnumMap<Group, Mode> stateMap = new EnumMap<>(Group.class);
 
     /**
-     * Storage for the current state of each axis and parameter. The current
-     * state of each is defined by a Double value. Null means that the Axis or
-     * paramter's state has not been set.
+     * Storage for the current state of each axis and parameter. The current state of each is
+     * defined by a Double value. Null means that the Axis or paramter's state has not been set.
      */
     private final EnumMap<Axis, Double> axisMap = new EnumMap<>(Axis.class);
 
     /**
-     * Storage for the comment string. Assumption is there will only be one per
-     * line (block). Null means the comment has not been set.
+     * Storage for the comment string. Assumption is there will only be one per line (block). Null
+     * means the comment has not been set.
      */
     private String comment = null;
 
     /**
-     * Physical line number of the source file that this state represents. This
-     * is not the block number defined by the N code word. This is used to
-     * facilitate debugging.
+     * Physical line number of the source file that this state represents. This is not the block
+     * number defined by the N code word. This is used to facilitate debugging.
      */
     public int lineNum = 0;
 
     /**
-     * The original line (block) from the source file. This is used to
-     * facilitate debugging.
+     * The original line (block) from the source file. This is used to facilitate debugging.
      */
     public String originalText = "";
 
@@ -53,105 +48,94 @@ public class State
 
     }
 
-
     /**
-     * Sets a group to a specified mode. For example, set the units group to
-     * either inches (G20) or mm (G21). The group identification is taken from
-     * the Mode enum as each code word only belongs to one group.
+     * Sets a group to a specified mode. For example, set the units group to either inches (G20) or
+     * mm (G21). The group identification is taken from the Mode enum as each code word only belongs
+     * to one group.
      * 
-     * @param mode
-     *            The mode to set.
-     * @throws IllegalArgumentException
-     *             is the group has previously been set for this State.
+     * @param mode The mode to set.
      */
-    public void set(Mode mode)
+    public void setMode(Mode mode)
     {
-        if (stateMap.get(mode.group()) != null)
-        {
-            throw new IllegalArgumentException("Attempt to set a Mode Group that is already set.");
-        }
         stateMap.put(mode.group(), mode);
     }
 
-
     /**
-     * Sets an axis or parameter to the specified value..
+     * Sets a group to a specified mode. For example, set the units group to either inches (G20) or
+     * mm (G21). The group identification is taken from the Mode enum as each code word only belongs
+     * to one group.
      * 
-     * @param axis
-     *            axis or parameter to set
-     * @param value
-     *            the value use
-     * @throws IllegalArgumentException
-     *             is the axis or parameter has previously been set for this
-     *             State.
+     * @param mode The mode to set.
      */
-    public void set(Axis axis, Double value)
+    public void setGroup(Group group, Mode mode)
     {
-        if (axisMap.get(axis) != null)
-        {
-            throw new IllegalArgumentException("Attempt to set a Axis that is already set.");
-        }
-        axisMap.put(axis, value);
+        stateMap.put(group, mode);
     }
-
-
-    /**
-     * Sets the text string for the comment field. Assumption is that there is
-     * only one comment per line (block).
-     * 
-     * @param comment
-     *            the comment text to store
-     * @throws IllegalArgumentException
-     *             is the comment has previously been set.
-     */
-    public void set(String comment)
-    {
-        if (this.comment != null)
-        {
-            throw new IllegalArgumentException("Attempt to set a Comment that is already set.");
-        }
-        this.comment = comment;
-    }
-
-
+    
     /**
      * Returns the current state of a mode group.
      * 
-     * @param group
-     *            the specific group to return.
+     * @param group the specific group to return.
      * @return the current setting of the or null is it has not been set
      */
-    public Mode get(Group group)
+    public Mode getGroup(Group group)
     {
         return stateMap.get(group);
     }
 
+    
+    /**
+     * Sets an axis or parameter to the specified value.
+     * 
+     * @param axis axis or parameter to set
+     * @param value the value use
+     */
+    public void setAxis(Axis axis, Double value)
+    {
+        axisMap.put(axis, value);
+    }
 
     /**
      * Returns the current state of an axis or parameter.
      * 
-     * @param axis
-     *            the specific axis or parameter to return.
+     * @param axis the specific axis or parameter to return.
      * @return the current setting of the or null is it has not been set
      */
-    public Double get(Axis axis)
+    public Double getAxis(Axis axis)
     {
         return axisMap.get(axis);
     }
 
+    /**
+     * Sets the text string for the comment field. Assumption is that there is only one comment per
+     * line (block).
+     * 
+     * @param comment the comment text to store
+     */
+    public void setComment(String comment)
+    {
+        this.comment = comment;
+    }
 
     /**
-     * Updated this state with all modal state values in the other state that
-     * have been set. Non-modal Axis values are not updated.
+     * Gets the text string for the comment field. 
+     */
+    public String getComment()
+    {
+        return comment;
+    }
+
+    /**
+     * Updated this state with all modal state values in the other state that have been set.
+     * Non-modal Axis values are not updated.
      * 
-     * @param other
-     *            the other state to use to update this state
+     * @param other the other state to use to update this state
      */
     public void mergeWith(State other)
     {
         for (Group g : Group.values())
         {
-            Mode m = other.get(g);
+            Mode m = other.getGroup(g);
             if (m != null) stateMap.put(m.group(), m);
         }
 
@@ -159,19 +143,18 @@ public class State
         {
             if (a.modal())
             {
-                Double d = other.get(a);
+                Double d = other.getAxis(a);
                 if (d != null) axisMap.put(a, d);
             }
         }
     }
 
-
     /**
-     * Returns a formated string of G codes that represent this state. Unset
-     * group or axis values are not included.
+     * Returns a formated string of G codes that represent this state. Unset group or axis values
+     * are not included.
      * 
-     * For example, if the units group has been set to inches, G20 is included.
-     * If unset, nothing is included for units.
+     * For example, if the units group has been set to inches, G20 is included. If unset, nothing is
+     * included for the units group.
      * 
      * @return this state as a formated G code string
      */
@@ -182,7 +165,7 @@ public class State
         for (Group g : Group.values())
         {
             Mode m = stateMap.get(g);
-            if (m != null) 
+            if (m != null)
             {
                 if (sb.length() > 0) sb.append(' ');
                 sb.append(m.code());
@@ -208,10 +191,9 @@ public class State
         return sb.toString();
     }
 
-
     /**
-     * Utility method to take the letter and value and generate a formated G
-     * code word. The result is suitable for outputing to a G code file.
+     * Utility method to take the letter and value and generate a formated G code word. The result
+     * is suitable to output to a G code file.
      * 
      * @return the formated code word
      */
@@ -233,10 +215,9 @@ public class State
         return s;
     }
 
-
     /**
-     * Debug utility function to print the current settings of this state in
-     * human readable form. Unset items are included.
+     * Debug utility function to print the current settings of this state in human readable form.
+     * Unset items are included.
      */
     public void print()
     {

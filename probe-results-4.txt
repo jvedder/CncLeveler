@@ -1,0 +1,114 @@
+>>> G90
+>>> G21
+Skipping blank line #3
+Skipping comment-only line: (ROW1)
+>>> G0Z-15
+>>> G0X2Y2
+>>> G38.2Z-25F50
+Skipping blank line #8
+>>> G0Z-15
+>>> G0X24Y2
+>>> G38.2Z-25F50
+Skipping blank line #12
+>>> G0Z-15
+>>> G0X50Y2
+>>> G38.2Z-25F50
+Skipping blank line #16
+>>> G0Z-15
+>>> G0X74Y2
+>>> G38.2Z-25F50
+Skipping blank line #20
+Skipping comment-only line: (ROW2)
+ok
+>>> G0Z-15
+ok
+ok
+>>> G0X2Y25
+ok
+[PRB:-270.500,-150.000,-20.858:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #25
+>>> G0Z-15
+ok
+>>> G0X24Y25
+ok
+[PRB:-248.500,-150.000,-20.954:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #29
+>>> G0Z-15
+ok
+>>> G0X50Y25
+ok
+[PRB:-222.500,-150.000,-20.978:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #33
+>>> G0Z-15
+ok
+>>> G0X74Y25
+ok
+[PRB:-198.500,-150.000,-20.989:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #37
+Skipping comment-only line: (ROW3)
+>>> G0Z-15
+ok
+>>> G0X2Y48
+ok
+[PRB:-270.500,-127.000,-20.806:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #42
+>>> G0Z-15
+ok
+ok
+>>> G0X24Y48
+[PRB:-248.500,-127.000,-20.900:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #46
+>>> G0Z-15
+ok
+ok
+>>> G0X50Y48
+[PRB:-222.500,-127.000,-20.939:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #50
+>>> G0Z-15
+ok
+ok
+>>> G0X74Y48
+[PRB:-198.500,-127.000,-20.940:1]
+ok
+>>> G38.2Z-25F50
+Skipping blank line #54
+Skipping comment-only line: (DONE)
+>>> G0Z0
+ok
+>>> G0X0Y0
+Skipping blank line #58
+ok
+[PRB:-270.500,-104.000,-20.853:1]
+ok
+ok
+ok
+[PRB:-248.500,-104.000,-20.870:1]
+ok
+ok
+ok
+[PRB:-222.500,-104.000,-20.881:1]
+ok
+ok
+ok
+[PRB:-198.500,-104.000,-20.876:1]
+ok
+ok
+ok
+
+**** Finished sending file in 00:02:23 ****
+
+

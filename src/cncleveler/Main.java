@@ -13,28 +13,28 @@ import cncleveler.logging.CncLogFormatter;
 
 public class Main
 {
-    protected static Logger logger = Logger.getLogger((Main.class.getName()));
-    protected static FileHandler logFileHander;
-    protected static ConsoleHandler consoleHandler;
+    private static Logger logger = Logger.getLogger((Main.class.getName()));
+    private static FileHandler logFileHander;
+    private static ConsoleHandler consoleHandler;
 
     public static void main(String[] args) throws Exception
     {
         setupLogger();
         logger.info("Starting");
 
-        // List<Point3> probes = ProbeLogReader.read("probe-test-data.txt");
-        // ProbeGrid grid = new ProbeGrid(probes);
+        List<Point3> probes = ProbeLogReader.read("probe-results-4.txt");
+        ProbeGrid grid = new ProbeGrid(probes);
 
-        // ProbeGrid grid = new ProbeGrid(testProbes());
+        //ProbeGrid grid = new ProbeGrid(testProbes());
 
-        // PyPlotGrid plot = new PyPlotGrid();
-        // plot.plot(grid);
+         PyPlotGrid plot = new PyPlotGrid();
+         plot.plot(grid);
 
-        GCodeParser parser = new GCodeParser();
-        List<State> states = parser.read("gcode.nc");
-        parser = null;
+        //GCodeParser parser = new GCodeParser();
+        //List<State> states = parser.read("gcode.nc");
+        //parser = null;
 
-        replayStates(states);
+        //replayStates(states);
 
         logger.info("Done.");
     }
@@ -77,7 +77,7 @@ public class Main
     /**
      * Sets up the application logging to a file
      */
-    protected static void setupLogger() throws SecurityException, IOException
+    private static void setupLogger() throws SecurityException, IOException
     {
         LogManager.getLogManager().reset();
         logFileHander = new FileHandler("CncLeveler.%u.log");

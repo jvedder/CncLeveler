@@ -16,8 +16,8 @@ public class GCodeParser
     /**
      * Logger for reporting status
      */
-    protected static Logger logger = Logger.getLogger((Main.class.getName()));
-
+    private static final Logger logger = Logger.getLogger((Main.class.getName()));
+       
     /**
      * List of characters allowed in a number
      */
@@ -133,9 +133,15 @@ public class GCodeParser
                     {
                         String msg = position() + "Unrecognized code word: " + code;
                         logger.severe(msg);
-                        throw new RuntimeException(msg);
+                        //throw new RuntimeException(msg);
                     }
-                    state.set(mode);
+                    if (state.getGroup(mode.group()) != null)
+                    {
+                        String msg = position() + "Duplicate Mode Group: " + mode.code() + " to " + mode.group().name();
+                        logger.severe(msg);
+                        //throw new RuntimeException(msg);                          
+                    }
+                    state.setGroup(mode.group(), mode);
                 }
                 else if (AXIS_LETTERS.contains(buffer[index]))
                 {
@@ -145,14 +151,26 @@ public class GCodeParser
                     {
                         String msg = position() + "Unrecognized code word: " + State.format(letter, value);
                         logger.severe(msg);
-                        throw new RuntimeException(msg);
+                        //throw new RuntimeException(msg);
                     }
-                    state.set(axis, value);
+                    if (state.getAxis(axis) != null)
+                    {
+                        String msg = position() + "Duplicate Axis: " + axis.letter();
+                        logger.severe(msg);
+                        //throw new RuntimeException(msg);                          
+                    }
+                    state.setAxis(axis, value);
                 }
                 else if (buffer[index] == '(')
                 {
-                    // skip over (COMMENTS)
-                    state.set(parseComment());
+                    String comment = parseComment();
+                    if (state.getComment() != null)
+                    {
+                        String msg = position() + "Duplicate Comment: " + comment;
+                        logger.severe(msg);
+                        //throw new RuntimeException(msg);                          
+                    }
+                    state.setComment(comment);
                 }
                 else if (buffer[index] <= ' ')
                 {
@@ -168,7 +186,7 @@ public class GCodeParser
                 {
                     String msg = position() + "Unrecognized code letter: " + buffer[index];
                     logger.severe(msg);
-                    throw new RuntimeException(msg);
+                    //throw new RuntimeException(msg);
                 }
             }
 
@@ -191,7 +209,7 @@ public class GCodeParser
         {
             String msg = position() + " Reached end of line; expected letter";
             logger.severe(msg);
-            throw new RuntimeException(msg);
+            //throw new RuntimeException(msg);
         }
 
         // Assume white space allowed before number
@@ -200,7 +218,7 @@ public class GCodeParser
         {
             String msg = position() + " Reached end of line; expected number";
             logger.severe(msg);
-            throw new RuntimeException(msg);
+            //throw new RuntimeException(msg);
         }
         // Put all number characters into a string
         StringBuilder number = new StringBuilder();
@@ -210,7 +228,17 @@ public class GCodeParser
             index++;
         }
         // Parse the string into a double
-        value = Double.parseDouble(number.toString());
+        value = 0.0;
+        try
+        {
+            value = Double.parseDouble(number.toString());
+        }
+        catch (NumberFormatException ex)
+        {
+            String msg = position() + " Unable to parse number: " + number;
+            logger.severe(msg);
+            //throw new RuntimeException(msg);            
+        }
         intValue = (int) Math.floor(value);
     }
 

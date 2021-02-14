@@ -1,5 +1,6 @@
 package cncleveler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -7,61 +8,59 @@ import java.util.logging.Logger;
 
 public class ProbeGrid
 {
-    protected final boolean DEBUG = true;
-    protected static Logger logger = Logger.getLogger((Main.class.getName()));
+    private static Logger logger = Logger.getLogger((Main.class.getName()));
 
     List<Point3> probes = null;
 
-    protected double x0 = 0.0;
-    protected double y0 = 0.0;
+    //private double x0 = 0.0;
+    //private double y0 = 0.0;
+    protected double z0 = 0.0;
 
-    public int xsize = 0;
-    public int ysize = 0;
+    protected int xsize = 0;
+    protected int ysize = 0;
 
-    public double[] xgrid;
-    public double[] ygrid;
-    public double[][] zprobe;
+    protected double[] xgrid;
+    protected double[] ygrid;
+    protected double[][] zprobe;
 
     public Point3 extents_min;
     public Point3 extents_max;
 
-
     /**
-     * Constructor that requires a list of (x,y,z) probe values. Processes the
-     * values into a arrays for easier interpolation.
+     * Constructor that requires a list of Point3(x,y,z) probe values. Processes the values into a
+     * arrays for easier interpolation.
      *
-     * @param probePoints
-     *            List of probe points
+     * @param probePoints List of probe points
      */
-    public ProbeGrid(List<Point3> probePoints)
+    public ProbeGrid(List<Point3> rawProbePoints)
     {
         logger.info("Creating Probe Grid");
 
-        probes = probePoints;
+        offsetProbes(rawProbePoints);
         findExtents();
         makeXYgrids();
-        if (DEBUG)
-        {
-            printAxisGrid(xgrid, "X");
-            printAxisGrid(ygrid, "Y");
-        }
+        logger.info("xgrid = " + arrayToSTring(xgrid));
+        logger.info("ygrid = " + arrayToSTring(ygrid));
         checkForDuplicates(xgrid, "X");
         checkForDuplicates(ygrid, "Y");
         makeZprobes();
-        if (DEBUG)
-        {
-            printZprobes();
-        }
+        logZprobes();
+        
+        // compute Z offset
+        z0 = 0.0d;
+        z0 = getProbeHeight(0.0,  0.0);
+        
+        logger.info(String.format("Z0 = %.3f", z0));
+        
+        logger.info("Probe Grid Complete");        
     }
 
     /**
-     * Computes the z probe offset for a given an (x,y) coordinate by linearly
-     * interpolating the probe data.
+     * Computes the z probe offset for a given an (x,y) coordinate by linearly interpolating the
+     * probe data.
      * 
-     * @param x
-     *            The x coordinate to use in interpolation
-     * @param y
-     *            The y coordinate to use in interpolation
+     * @param x The x coordinate to use in interpolation
+     * @param y The y coordinate to use in interpolation
      * @return the interpolated z value
      */
     public double getProbeHeight(double x, double y)
@@ -75,35 +74,32 @@ public class ProbeGrid
         double y_ratio = (y - ygrid[j]) / (ygrid[j + 1] - ygrid[j]);
 
         // linear interpolate in y on left side;
-        z1 = zprobe[i][j];
-        z2 = zprobe[i][j + 1];
+        z1 = zprobe[j][i];
+        z2 = zprobe[j + 1][i];
         double z_left = z1 + (z2 - z1) * y_ratio;
 
         // linear interpolate in y on right side;
-        z1 = zprobe[i + 1][j];
-        z2 = zprobe[i + 1][j + 1];
+        z1 = zprobe[j][i + 1];
+        z2 = zprobe[j + 1][i + 1];
         double z_right = z1 + (z2 - z1) * y_ratio;
 
         // linear interpolate in x between left and right sides;
         double z = z_left + (z_right - z_left) * x_ratio;
-
-        return z;
+        
+        // Offset by Z0
+        return z - z0;
     }
 
-    
     /**
-     * Given an array of n grid values and a value v, returns i such that
-     * grid[i] <= v < grid[i+1]. For out-of-bounds values, returns 0 if v <=
-     * grid[0] or (n-2) if v >= grid[n-1]. 1 *
+     * Given an array of n grid values and a value v, returns i such that grid[i] <= v < grid[i+1].
+     * For out-of-bounds values, returns 0 if v <= grid[0] or (n-2) if v >= grid[n-1]. Both the
+     * returned value i and (i+1) will valid index to the array.
      * 
-     * @param grid
-     *            a sorted array of grid values
-     * @param v
-     *            a value to search for
-     * @return an index i such that grid[i] and grid[i+1] can be used for
-     *         interpolation
+     * @param grid a sorted array of grid values
+     * @param v a value to search for
+     * @return an index i such that grid[i] <= v < grid[i+1]
      */
-    protected int findAxisIndex(double[] grid, double v)
+    private int findAxisIndex(double[] grid, double v)
     {
         int n = grid.length;
         for (int i = 1; i < n; i++)
@@ -114,10 +110,27 @@ public class ProbeGrid
     }
 
     /**
-     * Utility function to find the minimum and maximum value for each of x, y
-     * and z. Results are stored in extents_min and extents_max.
+     * offsets each probe point to the Work Coordinate System (G54 .. G59)
+     * 
+     * @param rawProbePoints the probe points from the GRBL log file in machine coordinates
      */
-    protected void findExtents()
+    private void offsetProbes(List<Point3> rawProbePoints)
+    {
+        logger.info("  Adding offset to probe grid: " + Config.probe_offset);
+
+        probes = new ArrayList<Point3>(rawProbePoints.size());
+
+        for (Point3 p : rawProbePoints)
+        {
+            probes.add(p.relativeTo(Config.probe_offset));
+        }
+    }
+
+    /**
+     * Utility function to find the minimum and maximum value for each of x, y and z. Results are
+     * stored in extents_min and extents_max.
+     */
+    private void findExtents()
     {
         extents_min = new Point3(Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);
         extents_max = new Point3(Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
@@ -135,14 +148,16 @@ public class ProbeGrid
             extents_max.y = Math.max(extents_max.y, probe.y);
             extents_max.z = Math.max(extents_max.z, probe.z);
         }
+        logger.info("  Probe extents min:" + extents_min + ", max:" + extents_max);
+
     }
 
     /**
-     * Utility function to create the xgrid and ygrid arrays from the probe data
-     * provided to the class constructor. They contain the unique x and unique y values
-     * in sorted order. Reports the length of each array to the logger.
+     * Utility function to create the xgrid and ygrid arrays from the probe data provided to the
+     * class constructor. They contain the unique x and unique y values in sorted order. Reports the
+     * length of each array to the logger.
      */
-    protected void makeXYgrids()
+    private void makeXYgrids()
     {
         int i;
 
@@ -162,7 +177,7 @@ public class ProbeGrid
         logger.info("X grid size: " + xsize);
         logger.info("Y grid size: " + ysize);
 
-        // Convert xvalues to xgrid array for easy indexing
+        // Convert xvalues set to xgrid array for easy indexing
         xgrid = new double[xsize];
         i = 0;
         for (double x : xvalues)
@@ -170,7 +185,7 @@ public class ProbeGrid
             xgrid[i++] = x;
         }
 
-        // Convert yvalues to ygrid array for easy indexing
+        // Convert yvalues set to ygrid array for easy indexing
         ygrid = new double[ysize];
         i = 0;
         for (double y : yvalues)
@@ -180,12 +195,12 @@ public class ProbeGrid
     }
 
     /**
-     * Utility function to create the zprobe array. The zprobe values have the
-     * indexed the same as xgrid and ygrid.
+     * Creates the zprobe 2-dimensional array using the same index values as the xgrid and ygrid
+     * arrays
      */
-    protected void makeZprobes()
+    private void makeZprobes()
     {
-        zprobe = new double[xsize][ysize];
+        zprobe = new double[ysize][xsize];
 
         for (int i = 0; i < xsize; i++)
         {
@@ -194,31 +209,32 @@ public class ProbeGrid
             {
                 double y = ygrid[j];
 
-                zprobe[i][j] = Double.NaN;
+                // find the z value at this (x,y) position
+                zprobe[j][i] = Double.NaN;
                 for (Point3 probe : probes)
                 {
                     if ((probe.x == x) && (probe.y == y))
                     {
-                        zprobe[i][j] = probe.z;
+                        zprobe[j][i] = probe.z;
                         break;
                     }
                 }
-                if (Double.isNaN(zprobe[i][j]))
+                if (Double.isNaN(zprobe[j][i]))
                 {
-                    logger.warning(String.format("Missing Probe value at [%d,%d] (%.2f,%.2f)", i, j, x, y));
+                    logger.warning(String.format("Missing Probe value at index [%d,%d] (%.2f,%.2f)", i, j, x, y));
                 }
             }
         }
     }
 
     /**
-     * Utility function to review the xgrid and ygrid array to check for near duplicates. 
-     * Because the coordinate values are floating point numbers reported bu GRBL,
-     * there is a chance of round-off error in the reported x or y coordinates. This
-     * function checks for and reports pairs of x or y coordinates that are less
-     * than 0.1 from each other.  Results are reported to the logger as a warning.
+     * Utility function to review the xgrid and ygrid array to check for near duplicates. Because
+     * the coordinate values are floating point numbers reported bu GRBL, there is a chance of
+     * round-off error in the reported x or y coordinates. This function checks for and reports
+     * pairs of x or y coordinates that are less than 0.1 from each other. Results are reported to
+     * the logger as a warning.
      */
-    protected void checkForDuplicates(double[] grid, String axis)
+    private void checkForDuplicates(double[] grid, String axis)
     {
         double prev = Double.NEGATIVE_INFINITY;
         for (double v : grid)
@@ -232,45 +248,66 @@ public class ProbeGrid
     }
 
     /**
-     * A debug function to print the values in the xgrid or ygrid arrays to System.out.
-     * @param grid The xgrid or ygrid array to print
-     * @param axis the string value "X" or "Y" to annotate the output
+     * Converts an array of double to a printable string.
+     * 
+     * @param grid array to convert
      */
-    protected void printAxisGrid(double[] grid, String axis)
+    private String arrayToSTring(double[] grid)
     {
-        System.out.println(axis + " Grid values");
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+
+        Boolean first = true;
         for (int i = 0; i < grid.length; i++)
         {
-            System.out.print(String.format("%8.2f, ", grid[i]));
-        }
-        System.out.println();
-    }
-
-    /**
-     * A debug function to print the values in the zprobe arrays to System.out.
-     */
-        protected void printZprobes()
-    {
-        System.out.println("Z Probe values");
-        for (int i = 0; i < xsize; i++)
-        {
-            for (int j = 0; j < ysize; j++)
+            if (!first)
             {
-                System.out.print(String.format("%8.2f, ", zprobe[i][j]));
+                sb.append(", ");
+                first = false;
             }
-            System.out.println();
+            sb.append(String.format("%8.3f", grid[i]));
         }
+        sb.append("]");
+        return sb.toString();
     }
 
     /**
-     * Method to set the (x,y) offset from work piece coordinates to machine coordinates.
-     * @param x
-     * @param y
+     * Prints the Z-probe array to the log file.
      */
-    public void setOrigin(double x, double y)
+    private void logZprobes()
     {
-        x0 = x;
-        y0 = y;
+        logger.info("zprobes = ");
+
+        for (int j = 0; j < ysize; j++)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[");
+
+            Boolean first = true;
+            for (int i = 0; i < xsize; i++)
+            {
+                if (!first)
+                {
+                    sb.append(", ");
+                    first = false;
+                }
+                sb.append(String.format("%8.3f", zprobe[j][i]));
+            }
+            sb.append("]");
+            logger.info(sb.toString());
+        }
     }
+
+    // /**
+    // * Method to set the (x,y) offset from work piece coordinates to machine coordinates.
+    // *
+    // * @param x
+    // * @param y
+    // */
+    // public void setOrigin(double x, double y)
+    // {
+    // x0 = x;
+    // y0 = y;
+    // }
 
 }

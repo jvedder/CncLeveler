@@ -6,12 +6,15 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Logger;
 
 public class PyPlotGrid
 {
-
+    private static Logger logger = Logger.getLogger((Main.class.getName()));
+    
     public void plot(ProbeGrid probeGrid) throws IOException
     {
+        logger.info("Creating plot.py");
 
         // Open output file for writing
         Path outFile = Paths.get("plot.py");
@@ -102,7 +105,7 @@ public class PyPlotGrid
             for (int i = 0; i < probeGrid.xsize; i++)               
             {
                 if (i > 0) out.write(',');
-                out.write(String.format("%.3f", probeGrid.zprobe[i][j]));
+                out.write(String.format("%.3f", probeGrid.zprobe[j][i] - probeGrid.z0));
             }
             out.write("]\n");
             out.write("ax.plot(np.array(x),np.array(y),np.array(z),linewidth=2,color='black')\n");
@@ -132,7 +135,7 @@ public class PyPlotGrid
             for (int j = 0; j < probeGrid.ysize; j++)                 
             {
                 if (j > 0) out.write(',');
-                out.write(String.format("%.3f", probeGrid.zprobe[i][j]));
+                out.write(String.format("%.3f", probeGrid.zprobe[j][i] - probeGrid.z0));
             }
             out.write("]\n");
             out.write("ax.plot(np.array(x),np.array(y),np.array(z),linewidth=2,color='black')\n");
@@ -141,5 +144,7 @@ public class PyPlotGrid
         out.write("plt.show()\n");
 
         out.close();
+        
+        logger.info("plot.py complete");
     }
 }
