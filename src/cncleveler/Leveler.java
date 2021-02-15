@@ -52,8 +52,9 @@ public class Leveler
             }
         }
         logger.info("   " + count + " blocks adjusted");
-        logger.info("   Min Z: " + min);
-        logger.info("   Max Z: " + max);
+        logger.info("   After adjustment:");
+        logger.info("     Min : " + min);
+        logger.info("     Max : " + max);
         logger.info("Leveling complete");
     }
 }
