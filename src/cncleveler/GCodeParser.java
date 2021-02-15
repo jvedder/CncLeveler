@@ -180,7 +180,7 @@ public class GCodeParser
 
         }
         in.close();
-        logger.info("Parsed " + lineNum + " lines.");
+        logger.info("Parsed " + lineNum + " lines");
         return states;
     }
 

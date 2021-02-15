@@ -24,18 +24,21 @@ public class Main
 
         List<Point3> probes = ProbeLogReader.read("probe-results-4.txt");
         ProbeGrid grid = new ProbeGrid(probes);
-
         //ProbeGrid grid = new ProbeGrid(testProbes());
 
          PyPlotGrid plot = new PyPlotGrid();
          plot.plot(grid);
 
-        //GCodeParser parser = new GCodeParser();
-        //List<State> states = parser.read("gcode.nc");
-        //parser = null;
+        GCodeParser parser = new GCodeParser();
+        List<State> states = parser.read("gcode.nc");
+        parser = null;
+        
+        Leveler.level(states, grid);
 
         //replayStates(states);
-
+        
+        GCodeWriter.write("gcode_leveled.nc", states);
+ 
         logger.info("Done.");
     }
 

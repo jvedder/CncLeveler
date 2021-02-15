@@ -16,4 +16,4 @@
 plot.py
 CncLeveler.*.log
 CncLeveler.*.log.lck
-
+gcode_leveled.nc

@@ -29,9 +29,6 @@ public class Point3
 
     /**
      * Returns a new Point3 representing the offset of this instance from the specified point.
-     * 
-     * @param p0 the point to use as the "origin" for the offset,
-     * @return the offset as a Point3
      */
     public Point3 relativeTo(Point3 p0)
     {
@@ -41,11 +38,6 @@ public class Point3
     /**
      * Returns a new Point3 representing the offset of this instance to the specified (x,y,z)
      * coordinate.
-     * 
-     * @param x the x-coordinate of the point to use as the "origin" for the offset.
-     * @param y the y-coordinate of the point to use as the "origin" for the offset.
-     * @param z the z-coordinate of the point to use as the "origin" for the offset.
-     * @return the offset as a Point3
      */
     public Point3 relativeToXYZ(double x0, double y0, double z0)
     {
@@ -55,11 +47,6 @@ public class Point3
     /**
      * Returns a new Point3 representing the offset of this instance to the specified (x,y)
      * coordinate.
-     * 
-     * @param x the x-coordinate of the point to use as the "origin" for the offset.
-     * @param y the y-coordinate of the point to use as the "origin" for the offset.
-     * @param z the z-coordinate of the point to use as the "origin" for the offset.
-     * @return the offset as a Point3
      */
     public Point3 relativeToXY(double x0, double y0)
     {
@@ -67,17 +54,33 @@ public class Point3
     }
 
     /**
-     * Returns a new Point3 representing the offset of this instance to the specified (z)
+     * Returns a new Point3 representing the offset of this instance to the specified z
      * coordinate.
-     * 
-     * @param z the z-coordinate of the point to use as the "origin" for the offset.
-     * @return the offset as a Point3
      */
     public Point3 relativeToZ(double z0)
     {
         return new Point3(x, y, z - z0);
     }
-
+    
+    /**
+     * Modifies this instance to the minimum of each axis between this and the coordinates provided.
+     */
+    public void minWith(double x0, double y0, double z0)
+    {
+        x = Math.min(x, x0);
+        y = Math.min(y, y0);
+        z = Math.min(z, z0);
+    }
+    /**
+     * Modifies this instance to the maximum of each axis between this and the coordinates provided.
+     */
+    public void maxWith(double x0, double y0, double z0)
+    {
+        x = Math.max(x, x0);
+        y = Math.max(y, y0);
+        z = Math.max(z, z0);
+    }
+    
     /**
      * Printable representation of this point as (x,y,z).
      */

@@ -290,8 +290,8 @@ public class ProbeGrid
         Point3 min = new Point3(xgrid[0], ygrid[0], minZ);
         Point3 max = new Point3(xgrid[xsize - 1], ygrid[ysize - 1], maxZ);
 
-        logger.info("   Min: " + min);
-        logger.info("   Max: " + max);
+        logger.info("   Min Z: " + min);
+        logger.info("   Max Z: " + max);
     }
 
     /**
